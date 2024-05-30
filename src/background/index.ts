@@ -1,16 +1,12 @@
-import { runtime, tabs, storage } from 'webextension-polyfill';
+import { runtime, storage } from 'webextension-polyfill';
+import { getCurrentTab } from '../helpers/tabs';
 
 type Message = {
-    from: string
-    to: string
-    action: string
-  }
-
-async function getCurrentTab() {
-    const list = await tabs.query({ active: true, currentWindow: true })
-  
-    return list[0]
-  }
+  from: string;
+  to: string;
+  action: string;
+  data?: any;
+};
 
 async function incrementStoredValue(tabId: string) {
     const data = await storage.local.get(tabId)
@@ -39,42 +35,87 @@ export async function init() {
 
     console.log('[background] loaded ');
 };
-// send data to local storage
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+// Function to store parsed data in local storage new implementation
+async function storeParsedData(parsedData: any) {
+  try {
+    const result = await storage.local.get('ParsedExtensionData');
+    let existingData = result.ParsedExtensionData || [];
+    console.log('Existing data:', existingData);
+    
+    const isUnique = !existingData.some((item: { ASIN: any; }) => item.ASIN === parsedData.ASIN);
+    
+    if (isUnique) {
+      console.log("The new ASIN is unique");
+      existingData.push(parsedData);
+    } else {
+      console.log("The ASIN already exists. Updating the existing entry.");
+      existingData = existingData.map((item: any) =>
+        item.ASIN === parsedData.ASIN ? parsedData : item
+    );
+  }
+  
+  await storage.local.set({ ParsedExtensionData: existingData });
+  console.log("Data successfully updated in chrome storage", existingData);
+} catch (error) {
+  console.error("Error storing data:", error);
+}
+}
+
+runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
   if (message.from === 'content' && message.action === 'productDetails') {
-    // Process the data received from the content script
     console.log('Received product details in background:', message.data);
-
-    // You can send a response back to the content script if needed
-    sendResponse({ received: true });
-  }
-});
-// to fetch items from storage;
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "clearStorage") {
-    chrome.storage.local.get("DetailsData", async (result) => {
-      const data = result.DetailsData || [];
-      console.log('Data being cleared', data);
-      // Send data to server-side script using fetch or axios
-      // mongodb+srv://testDb:px#h7_F4G3BgJ$z@cluster0.k8dhinz.mongodb.net/testDb
-      const response = await fetch("http://localhost:27017/testdb/products", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        chrome.storage.local.clear(() => {
-          console.log("Local storage cleared successfully");
-          sendResponse({ message: "Storage cleared and data sent." });
-        });
-      } else {
-        console.error("Error sending data to server:", response.statusText);
-        sendResponse({ message: "Error clearing storage." });
-      }
+    storeParsedData(message.data).then(() => {
+      console.log('Parsed data to storage');
+    }).catch((error) => {
+      console.error('Error storing parsed data:', error);
+      // sendResponse({ received: false, error: error.message });
     });
+    
+    // Return true to indicate that the response will be sent asynchronously
+    return true;
   }
 });
 
+// runtime.onInstalled.addListener(() => {
+//   console.log('[background] loaded');
+// });
+// send data to local storage old implementation
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   if (message.from === 'content' && message.action === 'productDetails') {
+//     // Process the data received from the content script
+//     console.log('Received product details in background:', message.data);
+
+//     // You can send a response back to the content script if needed
+//     sendResponse({ received: true });
+//   }
+// });
+
+// to fetch items from storage; to invoke latter asynchronously
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//   if (request.action === "clearStorage") {
+//     chrome.storage.local.get("DetailsData", async (result) => {
+//       const data = result.DetailsData || [];
+//       console.log('Data being cleared', data);
+//       // Send data to server-side script using fetch or axios
+//       // mongodb+srv://testDb:px#h7_F4G3BgJ$z@cluster0.k8dhinz.mongodb.net/testDb
+//       const response = await fetch("http://localhost:27017/testdb/products", {
+//         method: "POST",
+//         body: JSON.stringify(data),
+//       });
+
+//       if (response.ok) {
+//         chrome.storage.local.clear(() => {
+//           console.log("Local storage cleared successfully");
+//           sendResponse({ message: "Storage cleared and data sent." });
+//         });
+//       } else {
+//         console.error("Error sending data to server:", response.statusText);
+//         sendResponse({ message: "Error clearing storage." });
+//       }
+//     });
+//   }
+// });
 // runtime.onInstalled.addListener(() => {
 //   init().then(() => {
 //     console.log('[background] loaded')

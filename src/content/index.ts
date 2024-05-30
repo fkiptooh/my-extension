@@ -1,13 +1,17 @@
 import { runtime } from 'webextension-polyfill'
 import { AddProductButton } from '../popup/components/injections/AddProductButton';
-import { getCurrentTab } from '../helpers/tabs';
+// import { getCurrentTab } from '../helpers/tabs';
 import { parseAmazonPage, parseDataToStorage } from './parseProduct';
 console.log('[content] loaded ');
-
 function handleClick(btnContainer: HTMLDivElement) {
   const productDetails = parseAmazonPage();
   console.log("Product Details:", productDetails);
-  getCurrentTab().then((currentTab) => {
+  
+  runtime.sendMessage({
+    from: 'content',
+    to: 'background',
+    action: 'getCurrentTab'
+  }).then((currentTab) => {
     console.log("Current tab:", currentTab);
     if (currentTab && currentTab.id) {
       console.log("Active tab queried");
@@ -31,8 +35,7 @@ function handleClick(btnContainer: HTMLDivElement) {
       );
     }
   });
-  
-  // You can send these details to the background script or use them as needed
+
   runtime.sendMessage({
     from: 'content',
     to: 'background',
@@ -40,8 +43,10 @@ function handleClick(btnContainer: HTMLDivElement) {
     data: productDetails
   }).then(response => {
     console.log('Response from background:', response);
+  }).catch(error => {
+    console.error('Error in message response:', error);
   });
-}
+};
 
 function handleAfterClick(btnContainer: HTMLDivElement) {
     console.log('Button clicked again');

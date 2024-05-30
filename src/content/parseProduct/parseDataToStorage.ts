@@ -6,9 +6,9 @@ export function parseDataToStorage(parsedData: any) {
     // eslint-disable-next-line no-lone-blocks
     {
       chrome.storage.local.get(
-        "ExtensionsStorage",
+        "ParsedExtensionData",
         function (result) {
-          let existingData = result.ExtensionsStorage || [];
+          let existingData = result.ParsedExtensionData || [];
           console.log('existing data :', existingData);
           // checking for uniqueness before storing product data: using asins
           const isUnique = !existingData.some(
@@ -29,7 +29,7 @@ export function parseDataToStorage(parsedData: any) {
   
           // Update the local storage with the new array
           chrome.storage.local.set(
-            { ExtensionsStorage: existingData },
+            { ParsedExtensionData: existingData },
             function () {
               if (chrome.runtime.lastError) {
                 console.error(
