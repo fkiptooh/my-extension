@@ -16,7 +16,10 @@ const overrideOutput = (config) => {
       filename: 'static/js/[name].js',
       chunkFilename: 'static/js/[name].js',
     }
-  
+    // config.module.rules.push({
+    //   test: /\.css$/,
+    //   use: ['style-loader', 'css-loader'], // Loaders for CSS processing
+    // });
     return config
 }
 

@@ -14,7 +14,7 @@ root.render(
     {/* test */}
     {/* <Counter /> */}
     <Navbar/>
-    {/* <Product/> */}
+    <Product/>
   </React.StrictMode>
 );
 
