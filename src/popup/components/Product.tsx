@@ -1,11 +1,12 @@
-import { useProducts } from "../../hooks/useProducts"
+import { useProducts } from "../../hooks/useProducts";
+import { columns } from "./demo/columns";
+import { DataTable } from "./demo/data-table";
 
 export const Product = () => {
-    const product = useProducts();
-    return (
-        <div>
-            {/*A component to fetch all products from local storage*/}
-            {JSON.stringify(product[0])}
-        </div>
-    )
-}
+  const products = useProducts();
+  return (
+    <div>
+      <DataTable columns={columns} data={products} />
+    </div>
+  );
+};

@@ -5,15 +5,28 @@ import './index.css';
 import reportWebVitals from '../reportWebVitals';
 // import { Counter } from './Counter';
 import { Navbar, Product } from './components';
+import { DataTable } from './components/demo/data-table';
+import { columns } from './components/demo/columns';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+// async function getData(): Promise<Payment[]> {
+//   // Fetch data from your API here.
+//   return [
+//     {
+//       id: "728ed52f",
+//       amount: 100,
+//       status: "pending",
+//       email: "m@example.com",
+//     },
+//     // ...
+//   ]
+// }
+
 root.render(
   <React.StrictMode>
-    {/* test */}
-    {/* <Counter /> */}
-    <Navbar/>
+    {/* <Navbar/> */}
     <Product/>
   </React.StrictMode>
 );

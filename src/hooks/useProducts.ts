@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { storage } from 'webextension-polyfill';
 
-interface Product {
-  ASIN: string; // always present
+export interface Product {
+  ASIN: string;
   brand?: string;
   color?: string;
   manufacturerName?: string;
   price?: string;
-  productTitle: string; // always present
+  productTitle: string;
   rating: string;
   reviewCount?: string;
   unitCount?: string;
