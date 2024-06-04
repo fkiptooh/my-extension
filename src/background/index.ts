@@ -1,5 +1,6 @@
 import { runtime, storage } from 'webextension-polyfill';
 import { getCurrentTab } from '../helpers/tabs';
+import { sendDataToDb } from '../content';
 
 type Message = {
   from: string;
@@ -62,32 +63,80 @@ async function storeParsedData(parsedData: any) {
 }
 }
 
-runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
-  if (message.from === 'content' && message.action === 'productDetails') {
-    console.log('Received product details in background:', message.data);
-    storeParsedData(message.data).then(() => {
-      console.log('Parsed data to storage');
-    }).catch((error) => {
-      console.error('Error storing parsed data:', error);
-      // sendResponse({ received: false, error: error.message });
-    });
-    
-    // Return true to indicate that the response will be sent asynchronously
-    return true;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.from === 'content') {
+    if (message.action === 'productDetails') {
+      console.log('Received product details in background:', message.data);
+
+      storeParsedData(message.data)
+        .then(() => {
+          console.log('Parsed data to storage');
+          sendResponse({ received: true });
+        })
+        .catch((error) => {
+          console.error('Error storing parsed data:', error);
+          sendResponse({ received: false, error: error.message });
+        });
+
+      return true;
+    } 
+    else if (message.action === 'clearAndSendData') {
+      sendDataToDb()
+        .then((res) => {
+          console.log('Response sent to storage', res);
+          sendResponse({ message: 'Storage cleared and data sent successfully.' });
+          console.log('Data sent to db');
+        })
+        .catch((error) => {
+          console.error('Error clearing storage or sending data:', error);
+          sendResponse({ message: 'Error clearing storage or sending data.', error });
+        });
+
+      return true;
+    }
   }
 });
 
-// runtime.onInstalled.addListener(() => {
-//   console.log('[background] loaded');
-// });
-// send data to local storage old implementation
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.from === 'content' && message.action === 'productDetails') {
-//     // Process the data received from the content script
-//     console.log('Received product details in background:', message.data);
 
-//     // You can send a response back to the content script if needed
-//     sendResponse({ received: true });
+// runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
+//   if (message.from === 'content' && message.action === 'productDetails') {
+//     console.log('Received product details in background:', message.data);
+//     storeParsedData(message.data).then(() => {
+//       console.log('Parsed data to storage');
+//     }).catch((error) => {
+//       console.error('Error storing parsed data:', error);
+//       // sendResponse({ received: false, error: error.message });
+//     });
+    
+//     // Return true to indicate that the response will be sent asynchronously
+//     return true;
+//   }
+//   else if (message.from === 'content' && message.action === 'clearAndSendData') {
+//     // Handle clear storage and send data request from content script
+//     sendDataToDb().then((res) => {
+//       console.log('response sent to storage', res);
+//       // sendResponse({ message: 'Storage cleared and data sent successfully.' });
+//       console.log('data send to db');
+//     }).catch((error) => {
+//       // sendResponse({ message: 'Error clearing storage or sending data.', error });
+//       console.error(error);
+//     });
+//     return true;
+//   }
+// });
+
+// runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
+//   if (message.from === 'content' && message.action === 'clearAndSendData') {
+//     // Handle clear storage and send data request from content script
+//     sendDataToDb().then((res) => {
+//       console.log('response sent to storage', res);
+//       // sendResponse({ message: 'Storage cleared and data sent successfully.' });
+//       console.log('data send to db');
+//     }).catch((error) => {
+//       // sendResponse({ message: 'Error clearing storage or sending data.', error });
+//       console.error(error);
+//     });
+//     return true;
 //   }
 // });
 

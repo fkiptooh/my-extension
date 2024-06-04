@@ -1,6 +1,7 @@
 
 import { Product } from "@/src/hooks/useProducts"
 import { ColumnDef } from "@tanstack/react-table"
+import { Trash2 } from "lucide-react"
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -24,9 +25,16 @@ export const columns: ColumnDef<Product>[] = [
     header: "Price",
   },
   {
-    accessorKey: "productTitle",
-    header: "Product Title",
-  },
+    accessorKey: 'Action',
+    header: 'delete',
+    cell: () => {
+      return <Trash2 className="text-rose-300"/>
+    }
+  }
+  // {
+  //   accessorKey: "productTitle",
+  //   header: "Product Title",
+  // },
 //   {
 //     accessorKey: "rating",
 //     header: "Rating",

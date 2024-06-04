@@ -1,0 +1,4 @@
+From the parsed items sent to storage:
+1. Get the asins.
+2. Send the asins to db.
+3. From the db, lets schedule a scraper to run after a given interval/based on the given threshold of received number of asins.
