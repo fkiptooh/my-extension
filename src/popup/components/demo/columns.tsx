@@ -26,7 +26,7 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: 'Action',
-    header: 'delete',
+    header: 'Delete',
     cell: () => {
       return <Trash2 className="text-rose-300"/>
     }

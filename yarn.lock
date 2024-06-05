@@ -6865,13 +6865,6 @@ mkdirp@~0.5.1:
   dependencies:
     minimist "^1.2.6"
 
-mongod@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/mongod/-/mongod-2.0.0.tgz#ceec4b72305190e85d6f8fac992f15a47eb18c74"
-  integrity sha512-J1it0yFsLH+y4EIBByEDPKUu+2AQlEMoRc4ugtKRlppQM6dh4oFEIJlpuCE1Cixt33Ni1gZQ+eaizWTqBc5MTA==
-  dependencies:
-    promise-queue "^2.2.3"
-
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
@@ -7944,11 +7937,6 @@ process-nextick-args@~2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
   integrity sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==
-
-promise-queue@^2.2.3:
-  version "2.2.5"
-  resolved "https://registry.yarnpkg.com/promise-queue/-/promise-queue-2.2.5.tgz#2f6f5f7c0f6d08109e967659c79b88a9ed5e93b4"
-  integrity sha512-p/iXrPSVfnqPft24ZdNNLECw/UrtLTpT3jpAAMzl/o5/rDsGCPo3/CQS2611flL6LkoEJ3oQZw7C8Q80ZISXRQ==
 
 promise@^8.1.0:
   version "8.3.0"
