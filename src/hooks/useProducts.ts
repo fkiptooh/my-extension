@@ -22,6 +22,7 @@ export function useProducts() {
         const result = await storage.local.get('ParsedExtensionData');
         const storedProducts = result.ParsedExtensionData || [];
         setProducts(storedProducts);
+        console.log(products);
       } catch (error) {
         console.error('Error fetching data:', error);
       }

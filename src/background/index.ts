@@ -1,21 +1,23 @@
-import { storage } from 'webextension-polyfill';
+import { storage } from "webextension-polyfill";
 // import { getCurrentTab } from '../helpers/tabs';
-import { sendDataToDb } from '../content';
+import { sendDataToDb } from "../content";
 
-type Message = {
-  from: string;
-  to: string;
-  action: string;
-  data?: any;
-};
+// type Message = {
+//   from: string;
+//   to: string;
+//   action: string;
+//   data?: any;
+// };
 
-async function storeParsedData(parsedData: any, p0: (error: any, response: any) => void) {
+async function storeParsedData(parsedData: any) {
   try {
-    const result = await storage.local.get('ParsedExtensionData');
+    const result = await storage.local.get("ParsedExtensionData");
     let existingData = result.ParsedExtensionData || [];
-    console.log('Existing data:', existingData);
+    console.log("Existing data:", existingData);
 
-    const isUnique = !existingData.some((item: { ASIN: any; }) => item.ASIN === parsedData.ASIN);
+    const isUnique = !existingData.some(
+      (item: { ASIN: any }) => item.ASIN === parsedData.ASIN
+    );
 
     if (isUnique) {
       console.log("The new ASIN is unique");
@@ -34,54 +36,118 @@ async function storeParsedData(parsedData: any, p0: (error: any, response: any) 
     throw error;
   }
 }
-// Message listener to handle messages from the content script
-chrome.runtime.onMessage.addListener(async (message: Message, sender, sendResponse) => {
-  console.log('Message received in background:', message);
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (
+    message.from === "content" &&
+    message.to === "background" &&
+    message.action === "productDetails"
+  ) {
+    const productDetails = message.data;
 
-  if (message.from === 'content') {
-    switch (message.action) {
-      case 'clearAndSendData':
-        try {
-          await sendDataToDb();
-          console.log('Data sent to db and storage cleared');
-          sendResponse({ message: 'Storage cleared and data sent successfully.' });
-        } catch (error) {
-          console.error('Error clearing storage or sending data:', error);
-          sendResponse({ message: 'Error clearing storage or sending data.', error });
-        }
-        break;
+    // Store product details in local storage
+    await storeParsedData(productDetails)
+      .then(() => {
+        console.log("Product details saved to local storage");
+        sendResponse({ data: productDetails });
+      })
+      .catch((error) => {
+        console.error("Error saving to local storage:", error);
+        sendResponse({ data: "failure", error });
+      });
 
-      case 'productDetails':
-        console.log('Received product details in background:', message.data);
-        storeParsedData(message.data, (error, response) => {
-          if (error) {
-            console.error('Error storing parsed data:', error);
-            sendResponse({ received: false, error: error });
-          } else {
-            console.log('Parsed data to storage');
-            sendResponse(response); // Send parsed data or success message
-          }
-        });
-
-        break;
-        // try {
-        //   const response = await storeParsedData(message.data);
-        //   console.log('Parsed data to storage');
-        //   sendResponse(response);
-        // } catch (error) {
-        //   console.error('Error storing parsed data:', error);
-        //   sendResponse({ received: false, error: error });
-        // }
-        // break;
-      default:
-        console.log('Unknown action:', message.action);
-        sendResponse({ received: false, error: 'Unknown action' });
-    }
-    // return true; // Required to indicate async response
+    // Required to keep the message channel open for async responses
+    return true;
+  } 
+  else if (
+    message.from === "content" &&
+    message.to === "background" &&
+    message.action === "productDetails"
+  ) {
+    updateProductTable(message.productDetails);
   }
+  // else if (
+  //   message.from === "content" &&
+  //   message.to === "background" &&
+  //   message.action === "productDetails"
+  // ) {
+  //   try {
+  //     await sendDataToDb();
+  //     console.log("Data sent to db and storage cleared");
+  //     sendResponse({ message: "Storage cleared and data sent successfully." });
+  //   } catch (error) {
+  //     console.error("Error clearing storage or sending data:", error);
+  //     sendResponse({
+  //       message: "Error clearing storage or sending data.",
+  //       error,
+  //     });
+  //   }
+  // }
 });
+function updateProductTable(productInfo: any) {
+  // Example endpoint URL for updating the product table
+  let apiEndpoint = 'http://localhost:3000/sendData';
 
+  fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productInfo),
+  })
+  .then(response => response.json())
+  .then(data => {
+      console.log('Product table updated:', data);
+  })
+  .catch((error) => {
+      console.error('Error updating product table:', error);
+  });
+}
+// Message listener to handle messages from the content script
+// chrome.runtime.onMessage.addListener(async (message: Message, sender, sendResponse) => {
+//   console.log('Message received in background:', message);
 
+//   if (message.from === 'content') {
+//     switch (message.action) {
+//       case 'clearAndSendData':
+//         try {
+//           await sendDataToDb();
+//           console.log('Data sent to db and storage cleared');
+//           sendResponse({ message: 'Storage cleared and data sent successfully.' });
+//         } catch (error) {
+//           console.error('Error clearing storage or sending data:', error);
+//           sendResponse({ message: 'Error clearing storage or sending data.', error });
+//         }
+//         break;
+
+//       case 'productDetails':
+//         console.log('Received product details in background:', message.data);
+//         storeParsedData(message.data, (error, response) => {
+//           if (error) {
+//             console.error('Error storing parsed data:', error);
+//             sendResponse({ received: false, error: error });
+//           } else {
+//             console.log('Parsed data to storage');
+//             sendResponse(response); // Send parsed data or success message
+//           }
+//         });
+
+//         break;
+//         // try {
+//         //   const response = await storeParsedData(message.data);
+//         //   console.log('Parsed data to storage');
+//         //   sendResponse(response);
+//         // } catch (error) {
+//         //   console.error('Error storing parsed data:', error);
+//         //   sendResponse({ received: false, error: error });
+//         // }
+//         // break;
+//       default:
+//         console.log('Unknown action:', message.action);
+//         sendResponse({ received: false, error: 'Unknown action' });
+//     }
+//     // return true; // Required to indicate async response
+//   }
+// });
 
 // chrome.runtime.onMessage.addListener(async (message: Message, sender, sendResponse) => {
 //   if (message.from === 'content') {
@@ -98,7 +164,7 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, sendRespon
 //       }
 //       return true; // Required to indicate async response
 //     }
-//     else 
+//     else
 //     if (message.action === 'clearAndSendData') {
 //       try {
 //         const res = await sendDataToDb();
@@ -114,29 +180,29 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, sendRespon
 //   }
 // });
 
-  // async function incrementStoredValue(tabId: string) {
-  //   const data = await storage.local.get(tabId);
-  //   const currentValue = data?.[tabId] ?? 0;
-  //   console.log('[current storage value', currentValue);
-  
-  //   return storage.local.set({ [tabId]: currentValue + 1 });
-  // }
-  
-  // export async function init() {
-  //   await storage.local.clear();
-  
-  //   runtime.onMessage.addListener(async (message: Message) => {
-  //     if (message.to === 'background') {
-  //       console.log('background handled: ', message.action);
-  
-  //       const tab = await getCurrentTab();
-  //       const tabId = tab.id;
-  
-  //       if (tabId) {
-  //         return incrementStoredValue(tabId.toString());
-  //       }
-  //     }
-  //   });
-  
-  //   console.log('[background] loaded ');
-  // };
+// async function incrementStoredValue(tabId: string) {
+//   const data = await storage.local.get(tabId);
+//   const currentValue = data?.[tabId] ?? 0;
+//   console.log('[current storage value', currentValue);
+
+//   return storage.local.set({ [tabId]: currentValue + 1 });
+// }
+
+// export async function init() {
+//   await storage.local.clear();
+
+//   runtime.onMessage.addListener(async (message: Message) => {
+//     if (message.to === 'background') {
+//       console.log('background handled: ', message.action);
+
+//       const tab = await getCurrentTab();
+//       const tabId = tab.id;
+
+//       if (tabId) {
+//         return incrementStoredValue(tabId.toString());
+//       }
+//     }
+//   });
+
+//   console.log('[background] loaded ');
+// };
