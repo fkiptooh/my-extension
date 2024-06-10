@@ -1,6 +1,6 @@
 import { storage } from "webextension-polyfill";
-// import { getCurrentTab } from '../helpers/tabs';
-import { sendDataToDb } from "../content";
+// import { config } from 'dotenv';
+// config();
 
 // type Message = {
 //   from: string;
@@ -9,28 +9,38 @@ import { sendDataToDb } from "../content";
 //   data?: any;
 // };
 
+/**
+ * 
+ * @param parsedData 
+ * @returns an array of product attributes parsed to storage;
+ */
 async function storeParsedData(parsedData: any) {
+  if (!parsedData.asin || parsedData.asin === "ASIN not found") {
+    console.log("No valid ASIN found. Data will not be stored.");
+    return;
+  }
   try {
     const result = await storage.local.get("ParsedExtensionData");
     let existingData = result.ParsedExtensionData || [];
     console.log("Existing data:", existingData);
 
     const isUnique = !existingData.some(
-      (item: { ASIN: any }) => item.ASIN === parsedData.ASIN
+      (item: { asin: any }) => item.asin === parsedData.asin
     );
 
     if (isUnique) {
       console.log("The new ASIN is unique");
       existingData.push(parsedData);
+      await storage.local.set({ ParsedExtensionData: existingData });
+      console.log("Data successfully updated in chrome storage", existingData);
+      updateProductTable(parsedData);
     } else {
       console.log("The ASIN already exists. Updating the existing entry.");
       existingData = existingData.map((item: any) =>
-        item.ASIN === parsedData.ASIN ? parsedData : item
+        item.asin === parsedData.asin ? parsedData : item
       );
     }
 
-    await storage.local.set({ ParsedExtensionData: existingData });
-    console.log("Data successfully updated in chrome storage", existingData);
   } catch (error) {
     console.error("Error storing data:", error);
     throw error;
@@ -43,7 +53,12 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     message.action === "productDetails"
   ) {
     const productDetails = message.data;
-
+      // Check for valid asin before proceeding
+      if (!productDetails.asin || productDetails.asin === "Asin not found") {
+        console.log("No valid ASIN found. Data will not be stored or sent to the backend.");
+        sendResponse({ data: "failure", error: "No valid ASIN found" });
+        return;
+      }
     // Store product details in local storage
     await storeParsedData(productDetails)
       .then(() => {
@@ -58,13 +73,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Required to keep the message channel open for async responses
     return true;
   } 
-  else if (
-    message.from === "content" &&
-    message.to === "background" &&
-    message.action === "productDetails"
-  ) {
-    updateProductTable(message.productDetails);
-  }
+  // To consider if needed with separate implementation of the sendDataToDb logic;
+  // else if (
+  //   message.from === "content" &&
+  //   message.to === "background" &&
+  //   message.action === "productDetails"
+  // ) {
+  //   console.log('data to send to db', message.data);
+  //   updateProductTable(message.data);
+  // }
   // else if (
   //   message.from === "content" &&
   //   message.to === "background" &&
@@ -83,126 +100,36 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   //   }
   // }
 });
+/**
+ * sends data to the database in the background.
+ * @param productInfo 
+ */
 function updateProductTable(productInfo: any) {
   // Example endpoint URL for updating the product table
-  let apiEndpoint = 'http://localhost:3000/sendData';
-
+  // const apiEndpoint: string = process.env.API_ENDPOINT ?? 'http://default.endpoint';
+  const apiEndpoint = process.env.API_ENDPOINT!;
   fetch(apiEndpoint, {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json',
       },
-      body: JSON.stringify(productInfo),
+      body: JSON.stringify([productInfo]),
   })
-  .then(response => response.json())
+  .then(response => {
+    if (response.headers.get('Content-Type')?.includes('application/json')) {
+      return response.json();
+    } else {
+      return response.text();
+    }
+  })
   .then(data => {
+    if (typeof data === 'string') {
+      console.log('Response from server:', data);
+    } else {
       console.log('Product table updated:', data);
+    }
   })
   .catch((error) => {
-      console.error('Error updating product table:', error);
+    console.error('Error updating product table:', error);
   });
 }
-// Message listener to handle messages from the content script
-// chrome.runtime.onMessage.addListener(async (message: Message, sender, sendResponse) => {
-//   console.log('Message received in background:', message);
-
-//   if (message.from === 'content') {
-//     switch (message.action) {
-//       case 'clearAndSendData':
-//         try {
-//           await sendDataToDb();
-//           console.log('Data sent to db and storage cleared');
-//           sendResponse({ message: 'Storage cleared and data sent successfully.' });
-//         } catch (error) {
-//           console.error('Error clearing storage or sending data:', error);
-//           sendResponse({ message: 'Error clearing storage or sending data.', error });
-//         }
-//         break;
-
-//       case 'productDetails':
-//         console.log('Received product details in background:', message.data);
-//         storeParsedData(message.data, (error, response) => {
-//           if (error) {
-//             console.error('Error storing parsed data:', error);
-//             sendResponse({ received: false, error: error });
-//           } else {
-//             console.log('Parsed data to storage');
-//             sendResponse(response); // Send parsed data or success message
-//           }
-//         });
-
-//         break;
-//         // try {
-//         //   const response = await storeParsedData(message.data);
-//         //   console.log('Parsed data to storage');
-//         //   sendResponse(response);
-//         // } catch (error) {
-//         //   console.error('Error storing parsed data:', error);
-//         //   sendResponse({ received: false, error: error });
-//         // }
-//         // break;
-//       default:
-//         console.log('Unknown action:', message.action);
-//         sendResponse({ received: false, error: 'Unknown action' });
-//     }
-//     // return true; // Required to indicate async response
-//   }
-// });
-
-// chrome.runtime.onMessage.addListener(async (message: Message, sender, sendResponse) => {
-//   if (message.from === 'content') {
-//     if (message.action === 'productDetails') {
-//       console.log('Received product details in background:', message.data);
-
-//       try {
-//         await storeParsedData(message.data);
-//         console.log('Parsed data to storage');
-//         sendResponse({ received: true });
-//       } catch (error: unknown) {
-//         console.error('Error storing parsed data:', error);
-//         sendResponse({ received: false, error: error});
-//       }
-//       return true; // Required to indicate async response
-//     }
-//     else
-//     if (message.action === 'clearAndSendData') {
-//       try {
-//         const res = await sendDataToDb();
-//         console.log('Response sent to storage', res);
-//         sendResponse({ message: 'Storage cleared and data sent successfully.' });
-//         console.log('Data sent to db');
-//       } catch (error) {
-//         console.error('Error clearing storage or sending data:', error);
-//         sendResponse({ message: 'Error clearing storage or sending data.', error });
-//       }
-//       return true; // Required to indicate async response
-//     }
-//   }
-// });
-
-// async function incrementStoredValue(tabId: string) {
-//   const data = await storage.local.get(tabId);
-//   const currentValue = data?.[tabId] ?? 0;
-//   console.log('[current storage value', currentValue);
-
-//   return storage.local.set({ [tabId]: currentValue + 1 });
-// }
-
-// export async function init() {
-//   await storage.local.clear();
-
-//   runtime.onMessage.addListener(async (message: Message) => {
-//     if (message.to === 'background') {
-//       console.log('background handled: ', message.action);
-
-//       const tab = await getCurrentTab();
-//       const tabId = tab.id;
-
-//       if (tabId) {
-//         return incrementStoredValue(tabId.toString());
-//       }
-//     }
-//   });
-
-//   console.log('[background] loaded ');
-// };

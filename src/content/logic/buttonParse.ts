@@ -5,17 +5,19 @@ import { AddProductButton } from '../../../src/popup/components/injections/AddPr
 
 console.log('[content] loaded ');
 
+/**
+ * func: parse data on page load;
+ */
 function handlePageLoad() {
-    // Parse data on page load
     const productDetails = parseAmazonPage();
-  
-    // Send parsed data to background script
-    sendProductDetails(productDetails);
-  
+    sendProductDetails(productDetails);  
     console.log("Product Details:", productDetails);
 }
 
-// Function to send parsed product details to background script
+/**
+ * func: sends parsed product details to background script
+ * @param productDetails 
+ */
 function sendProductDetails(productDetails: any) {
     runtime.sendMessage({
         from: 'content',
@@ -32,7 +34,9 @@ function sendProductDetails(productDetails: any) {
 // Execute parseAmazonPage when the page is fully loaded
 window.addEventListener("load", handlePageLoad);
 
-// Handle button click to parse data again
+/**
+ * func: handle button clicks
+ */
 function handleClick() {
     const productDetails = parseAmazonPage();
     sendProductDetails(productDetails);
@@ -43,6 +47,9 @@ function handleAfterClick() {
     // handle the logic for after click
 }
 
+/**
+ * func: insert a button into the amazon product page.
+ */
 (function injectBtn(){
     const addProductBtn = AddProductButton('Parse Product', 'block', handleClick, handleAfterClick);
     const targetElement = document.getElementById('productTitle');

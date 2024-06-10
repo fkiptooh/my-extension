@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { storage } from 'webextension-polyfill';
 
 export interface Product {
-  ASIN: string;
+  asin: string;
   brand?: string;
   color?: string;
-  manufacturerName?: string;
+  manufacturer?: string;
   price?: string;
-  productTitle: string;
+  title: string;
   rating: string;
   reviewCount?: string;
   unitCount?: string;
-}
+};
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);

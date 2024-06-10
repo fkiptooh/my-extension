@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react"
 
 export const columns: ColumnDef<Product>[] = [
   {
-    accessorKey: "ASIN",
+    accessorKey: "asin",
     header: "Asin",
   },
   {

@@ -13,7 +13,7 @@
     },
     "content_scripts": [
       {
-        "matches": ["*://www.amazon.com/*"],
+        "matches": ["*://www.amazon.com/*", "*://www.amazon.com/*/dp/*" ],
         "js": ["./static/js/content.js"],
         "css": ["styles.css"]
       }
